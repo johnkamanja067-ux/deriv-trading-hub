@@ -79,14 +79,15 @@ function connect() {
     }
   };
 
+socket.onerror = () => {
+  statusEl.textContent = "WebSocket error. Checking connection...";
+};
 
-  socket.onerror = () => {
-    statusEl.textContent = "Connection error. Check internet or API access.";
-  };
-
-  socket.onclose = () => {
-    statusEl.textContent = "Disconnected. Refresh the page to reconnect.";
-
+socket.onclose = (event) => {
+  statusEl.textContent =
+    "Disconnected. Code: " + event.code +
+    ". Reason: " + (event.reason || "Not provided");
+};
   
 }
 connect();
