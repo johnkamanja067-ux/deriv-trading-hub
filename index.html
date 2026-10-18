@@ -79,13 +79,15 @@ function connect() {
     }
   };
 
+
   socket.onerror = () => {
     statusEl.textContent = "Connection error. Check internet or API access.";
   };
 
   socket.onclose = () => {
     statusEl.textContent = "Disconnected. Refresh the page to reconnect.";
-  };
+
+  
 }
 connect();
 </script>
