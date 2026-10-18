@@ -2,52 +2,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Deriv Trading Hub</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #101820;
-      color: white;
-      margin: 0;
-      padding: 24px;
-    }
-    .card {
-      background: #1c2935;
-      padding: 20px;
-      margin: 16px 0;
-      border-radius: 12px;
-    }
-    button {
-      background: #00bfa5;
-      border: 0;
-      padding: 12px 18px;
-      border-radius: 8px;
-      font-weight: bold;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deriv Trading Hub</title>
+<style>
+body{font-family:Arial;background:#101820;color:white;padding:20px}
+.card{background:#1c2935;padding:20px;margin:15px 0;border-radius:12px}
+.price{font-size:28px;color:#00d5b0}
+button{padding:12px;border:0;border-radius:8px;background:#00bfa5}
+</style>
 </head>
 <body>
-  <h1>Deriv Trading Hub</h1>
-  <p>Your trading dashboard</p>
+<h1>Deriv Trading Hub</h1>
+<p>Live market dashboard</p>
 
-  <div class="card">
-    <h2>Market Dashboard</h2>
-    <p>Live market data connection: Not connected</p>
-  </div>
+<div class="card">
+<h2>Market Dashboard</h2>
+<p id="status">Connecting to Deriv...</p>
+<p>Volatility 100 Index</p>
+<div id="price" class="price">Waiting for price...</div>
+<p>Last digit: <strong id="digit">-</strong></p>
+</div>
 
-  <div class="card">
-    <h2>Digit Signals</h2>
-    <p>Signals will appear here after analysis is added.</p>
-  </div>
+<div class="card">
+<h2>Digit Signals</h2>
+<p id="signals">Collecting live prices. No signal yet.</p>
+<p>Signals are informational, not guarantees.</p>
+</div>
 
-  <div class="card">
-    <h2>Automated Trading Bot</h2>
-    <p>Demo testing only. No trades are running.</p>
-    <button onclick="alert('Trading bot is not connected yet.')">
-      Test status
-    </button>
-  </div>
+<div class="card">
+<h2>Automated Trading Bot</h2>
+<p>Not enabled. No trades will be placed.</p>
+<button onclick="alert('Demo trading is not implemented yet.')">
+Bot status
+</button>
+</div>
+
+<script>
+const statusEl = document.getElementById("status");
+const priceEl = document.getElementById("price");
+const digitEl = document.getElementById("digit");
+const signalsEl = document.getElementById("signals");
+
+let socket;
+function connect() {
+  statusEl.textContent = "Connecting to market data...";
+  socket = new WebSocket(
+    "wss://ws.derivws.com/websockets/v3?app_id=1089"
+  );
+
+  socket.onopen = () => {
+    statusEl.textContent = "Connected — waiting for ticks";
+    socket.send(JSON.stringify({
+      ticks: "R_100",
+      subscribe: 1
+    }));
+  };
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.error) {
+      statusEl.textContent = "API error: " + data.error.message;
+      return;
+    }
+    if (data.tick) {
+      const quote = Number(data.tick.quote);
+      const formatted = quote.toFixed(data.tick.pip_size ?? 2);
+      const lastDigit = formatted.replace(".", "").slice(-1);
+
+      statusEl.textContent = "Live market data connected";
+      priceEl.textContent = formatted;
+      digitEl.textContent = lastDigit;
+      signalsEl.textContent =
+        "Latest observed digit: " + lastDigit +
+        ". This is market data, not a prediction.";
+    }
+  };
+
+  socket.onerror = () => {
+    statusEl.textContent = "Connection error. Check internet or API access.";
+  };
+
+  socket.onclose = () => {
+    statusEl.textContent = "Disconnected. Refresh the page to reconnect.";
+  };
+}
+connect();
+</script>
 </body>
 </html>
+
+
+    
